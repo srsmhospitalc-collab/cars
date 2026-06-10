@@ -217,6 +217,46 @@ l.parentNode.insertBefore(s, l);
     })({})
     </script>
     <!-- HilltopAds Popunder Code End -->
+<!-- Timer Box Start -->
+<div id="timer-box" style="position:fixed; top:10px; right:10px; background:#1976d2; color:white; padding:12px 20px; border-radius:8px; font-family:Arial; font-size:18px; font-weight:bold; z-index:9999; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+    ⏱️ Rukiye: <span id="countdown">22</span>s
+</div>
 
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('return_url');
+    const startTime = parseInt(urlParams.get('start'));
+    let timeLeft = parseInt(urlParams.get('time')) || 22;
+
+    const countdownElement = document.getElementById('countdown');
+    const timerBox = document.getElementById('timer-box');
+    
+    // Agar button3.html se aaya hai tabhi timer chalao
+    if (returnUrl && startTime) {
+        const timer = setInterval(function() {
+            timeLeft--;
+            countdownElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                
+                // Verify karo: 22 sec poore hue ya nahi
+                const timeSpent = (Date.now() - startTime) / 1000;
+                
+                if (timeSpent >= 21) { // 1 sec ka buffer
+                    // Success: 22 sec poore hue, wapas button3.html pe
+                    window.location.href = decodeURIComponent(returnUrl) + "?status=success";
+                } else {
+                    // Failed: Jaldi wapas aa gaya
+                    window.location.href = decodeURIComponent(returnUrl) + "?status=failed";
+                }
+            }
+        }, 1000);
+    } else {
+        // Direct cars page khola to timer hide kar do
+        timerBox.style.display = 'none';
+    }
+</script>
+<!-- Timer Box End -->
 </body>
 </html>
