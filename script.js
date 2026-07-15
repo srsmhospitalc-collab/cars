@@ -16,7 +16,7 @@ if(playData.date !== today){ playData = {date:today, count:0, lastTime:0}; }
 
 updateUI();
 
-// BUTTON 1 CLICK
+// BUTTON 1 CLICK - AD + QUESTIONS
 document.getElementById("playBtn").onclick = async () => {
   if(playData.count >= 10){ alert("Aaj ka limit 10/10 complete! Kal 12 baje ke baad aana"); return; }
   
@@ -70,29 +70,74 @@ function askQuestion(){
   }
 }
 
-// BUTTON 2 CLICK - REDEEM
+// BUTTON 2 CLICK - REDEEM MODAL KHOLEGA
 document.getElementById("redeemBtn").onclick = () => {
-  let twoDays = 2*24*60*60*1000;
-  if(Date.now() - lastRedeem < twoDays){
-    let left = Math.ceil((twoDays - (Date.now() - lastRedeem))/(24*60*60*1000));
-    alert(`${left} din baad dobara redeem kar sakte ho`);
-    return;
-  }
+  openRedeemModal();
+}
+
+// REDEEM MODAL FUNCTION
+function openRedeemModal(){
+  let modal = document.createElement("div");
+  modal.id = "redeemModal";
+  modal.className = "modal";
+  modal.style.display = "flex";
   
-  let link = prompt(`${username}, Insta Reel Link ya UPI ID dalo:`);
-  if(link){
-    // SHEET ME BHEJO
+  modal.innerHTML = `
+    <div class="modal-box">
+      <h2>🎁 Redeem Coins</h2>
+      <p>Balance: <b>${coins}</b> Coins</p>
+      <input type="text" id="redeemLink" placeholder="Insta Reel Link ya UPI ID dalo" style="width:100%; padding:12px; margin:15px 0; border-radius:8px; border:2px solid #333; background:#111; color:#fff">
+      <button id="confirmRedeem" class="btn btn-danger">Submit Request</button>
+      <button id="closeRedeem" class="btn" style="background:#444">Cancel</button>
+      <p id="redeemError" style="color:#ff416c; margin-top:10px"></p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById("closeRedeem").onclick = () => modal.remove();
+  
+  document.getElementById("confirmRedeem").onclick = () => {
+    let link = document.getElementById("redeemLink").value;
+    let error = document.getElementById("redeemError");
+    
+    // CHECK 1: 100 COIN HAI KYA?
+    if(coins < 100){
+      error.innerText = "Tere paas 100 coin nahi hai. Pehle earn kar.";
+      return;
+    }
+    
+    // CHECK 2: 2 DIN HO GAYE KYA?
+    let twoDays = 2*24*60*60*1000;
+    if(Date.now() - lastRedeem < twoDays){
+      let left = Math.ceil((twoDays - (Date.now() - lastRedeem))/(24*60*60*1000));
+      error.innerText = `Ruko! ${left} din baad dobara redeem kar sakte ho`;
+      return;
+    }
+    
+    if(link.trim() == ""){
+      error.innerText = "Link ya UPI ID dalna zaroori hai";
+      return;
+    }
+
+    // SAB THEEK HAI - SHEET ME BHEJO
+    var formData = new FormData();
+    formData.append("link", link);
+    formData.append("coins", 100);
+    formData.append("username", username);
+
     fetch(SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify({link:link, coins:100, username:username})
-    }).then(()=>console.log("sent to sheet"));
-    
+      body: formData,
+      mode: 'no-cors'
+    });
+
     coins -= 100;
     lastRedeem = Date.now();
     localStorage.setItem("lastRedeem", lastRedeem);
     saveData();
     updateUI();
-    alert("Request bhej di gayi ✅ Sheet me check kar");
+    modal.remove();
+    alert("Request bhej di gayi ✅ 2 din baad dobara kar sakte ho");
   }
 }
 
