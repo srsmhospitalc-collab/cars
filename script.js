@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw33O3Y3xqtM9L9RoISjEMj15pAF6FT9Y4kcfNMk5ig3LDZt08Rqr2_4SA2hURy-xbQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5_4W3zhcjNRXf2GLwQ6YtEuBGfIZnDDiwuWSGkv8_5aQAi-JG3CRCArs_iA7yNlvp/exec";
 
 let coins = parseInt(localStorage.getItem("coins")) || 0;
 let username = localStorage.getItem("username");
