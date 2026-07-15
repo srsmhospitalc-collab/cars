@@ -1,4 +1,5 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5_4W3zhcjNRXf2GLwQ6YtEuBGfIZnDDiwuWSGkv8_5aQAi-JG3CRCArs_iA7yNlvp/exec";
+const BOT_TOKEN = "8895544903:AAHbD3V0yU-4vdXl8Ih_EadrmnZAgJWlHtQ"; // tera token
+const CHAT_ID = "7732391940"; // tera chat id
 
 let coins = parseInt(localStorage.getItem("coins")) || 0;
 let username = localStorage.getItem("username");
@@ -75,7 +76,7 @@ document.getElementById("redeemBtn").onclick = () => {
   openRedeemModal();
 }
 
-// REDEEM MODAL FUNCTION
+// REDEEM MODAL FUNCTION - TELEGRAM WALA
 function openRedeemModal(){
   let modal = document.createElement("div");
   modal.id = "redeemModal";
@@ -96,7 +97,7 @@ function openRedeemModal(){
 
   document.getElementById("closeRedeem").onclick = () => modal.remove();
   
-  document.getElementById("confirmRedeem").onclick = () => {
+  document.getElementById("confirmRedeem").onclick = async () => {
     let link = document.getElementById("redeemLink").value;
     let error = document.getElementById("redeemError");
     
@@ -119,17 +120,19 @@ function openRedeemModal(){
       return;
     }
 
-    // SAB THEEK HAI - SHEET ME BHEJO
-    var formData = new FormData();
-    formData.append("link", link);
-    formData.append("coins", 100);
-    formData.append("username", username);
+    // SAB THEEK HAI - TELEGRAM PE BHEJO
+    let msg = `🔔 NEW REDEEM REQUEST
 
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      body: formData,
-      mode: 'no-cors'
-    });
+👤 Username: ${username}
+🔗 Link: ${link}
+🪙 Coins: 100
+⏰ Time: ${new Date().toLocaleString("en-IN", {timeZone: "Asia/Kolkata"})}`;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`);
+    } catch(e) {
+      console.log("Telegram error", e)
+    }
 
     coins -= 100;
     lastRedeem = Date.now();
