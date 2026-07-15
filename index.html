@@ -1,182 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src='//libtl.com/sdk.js' data-zone='11310206' data-sdk='show_11310206'></script>
-  <title>Coin Rush</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white; min-height: 100vh; padding: 20px;
-    }
-    .container { max-width: 400px; margin: 0 auto; animation: fadeIn 0.5s; }
-    @keyframes fadeIn { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
-    .glass {
-      background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px;
-      padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    .header { text-align: center; }
-    .header h1 { font-size: 28px; font-weight: 700; }
-    .coin-box { text-align: center; }
-    .coin-box .value { 
-      font-size: 48px; font-weight: 700; 
-      background: linear-gradient(45deg, #FFD700, #FFA500);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    .stats { display: flex; justify-content: space-around; text-align: center; }
-    .btn {
-      width: 100%; padding: 18px; border: none; border-radius: 15px;
-      font-size: 18px; font-weight: 600; cursor: pointer; margin-bottom: 12px;
-    }
-    .btn-play { background: linear-gradient(45deg, #00F260, #0575E6); color: white; }
-    .btn-redeem { background: linear-gradient(45deg, #FF512F, #F09819); color: white; }
-    .btn:disabled { background: gray; cursor: not-allowed; }
-    .msg { text-align: center; padding: 10px; border-radius: 10px; margin-top: 10px; display: none; }
-    .msg.success { background: rgba(0,255,0,0.2); display: block; }
-    .msg.error { background: rgba(255,0,0,0.2); display: block; }
-  </style>
+<title>Coin App</title>
+<script src='//libtl.com/sdk.js' data-zone='11310206' data-sdk='show_11310206'></script>
+<style>
+body{text-align:center;background:#111;color:#fff;font-family:sans-serif}
+#coins{font-size:50px;color:gold}
+button{padding:15px 30px;font-size:18px;border:none;border-radius:10px;margin:10px;cursor:pointer}
+#playBtn{background:#00ff00}
+#redeemBtn{background:#ff0000;color:#fff}
+#redeemBtn:disabled{background:gray}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="glass header"><h1>💰 Coin Rush</h1></div>
-    <div class="glass coin-box">
-      <div>Your Balance</div>
-      <div class="value" id="coins">0</div>
-    </div>
-    <div class="glass stats">
-      <div><div id="gamesToday">0</div><div>Today</div></div>
-      <div><div>5</div><div>Per Game</div></div>
-      <div><div>100</div><div>To Redeem</div></div>
-    </div>
-    <button class="btn btn-play" id="playBtn">▶️ Watch Ad & Play</button>
-    <div id="timer"></div>
-    <button class="btn btn-redeem" id="redeemBtn">💸 Redeem 100 Coins</button>
-    <div class="msg" id="msg"></div>
-  </div>
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    
-    // 1. FIREBASE CONFIG - Yaha apna config daal
-    const firebaseConfig = {
-      apiKey: "PASTE_YOUR_API_KEY",
-      authDomain: "PASTE_YOUR_AUTH_DOMAIN",
-      projectId: "PASTE_YOUR_PROJECT_ID",
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const functions = firebase.functions();
-    const auth = firebase.auth();
-    
-    let userId = "";
-    
-    auth.signInAnonymously();
-    auth.onAuthStateChanged(async (user) => {
-      if(user && tg.initDataUnsafe.user){
-        userId = tg.initDataUnsafe.user.id.toString();
-        const userRef = db.collection("users").doc(userId);
-        const doc = await userRef.get();
-        if(!doc.exists){
-          await userRef.set({
-            telegram_id: userId,
-            username: tg.initDataUnsafe.user.username || "User",
-            coins: 0, games_today: 0, last_play_time: null, last_redeem_date: null
-          });
-        }
-        loadUser();
-      }
-    });
-    
-    function loadUser(){
-      db.collection("users").doc(userId).onSnapshot(doc => {
-        const data = doc.data();
-        document.getElementById("coins").innerText = data.coins;
-        document.getElementById("gamesToday").innerText = data.games_today;
-        checkTimer(data);
-      });
-    }
-    
-    function checkTimer(data){
-      const last = data.last_play_time?.toMillis() || 0;
-      const diff = 5*60*1000 - (Date.now() - last);
-      if(diff > 0 && data.games_today > 0){
-        document.getElementById("playBtn").disabled = true;
-        document.getElementById("timer").innerText = `Wait: ${Math.ceil(diff/60000)} min`;
-      } else {
-        document.getElementById("playBtn").disabled = false;
-        document.getElementById("timer").innerText = "";
-      }
-    }
-    
-    document.getElementById("playBtn").onclick = async () => {
-    showMsg("Ad loading...", "success");
-    document.getElementById("playBtn").disabled = true;
+<h1>💰 Coins: <span id="coins">0</span></h1>
+<button id="playBtn">Watch Ad +5 Coins</button>
+<button id="redeemBtn" disabled>Redeem 100 Coins</button>
 
-    // MONETAG AD CHALAO
-    show_11310206().then(async () => {
-        // AD KHATAM HONE KE BAAD REWARD DO
-        const playGame = functions.httpsCallable('playGame');
-        const res = await playGame();
-        showMsg(res.data.error || "+5 Coins Earned!", res.data.error ? "error" : "success");
-        document.getElementById("playBtn").disabled = false;
-        
-    }).catch(() => {
-        // Agar ad skip kar di
-        showMsg("Ad poora dekho tabhi coin milega", "error");
-        document.getElementById("playBtn").disabled = false;
-    });
+<script>
+let coins = parseInt(localStorage.getItem("coins")) || 0;
+updateUI();
+
+function updateUI(){
+  document.getElementById("coins").innerText = coins;
+  document.getElementById("redeemBtn").disabled = coins < 100;
 }
-    
-    document.getElementById("redeemBtn").onclick = async () => {
-      const upi = prompt("Enter UPI ID:");
-      if(!upi) return;
-      const redeem = functions.httpsCallable('redeem');
-      const res = await redeem({upi: upi});
-      showMsg(res.data.error || "Redeem Request Sent!", res.data.error ? "error" : "success");
-    }
-    
-    function showMsg(text, type){
-      const msg = document.getElementById("msg");
-      msg.className = `msg ${type}`; msg.innerText = text;
-      setTimeout(() => msg.style.display = 'none', 3000);
-    }
-  </script>
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyBFv3HHot4Z0Fnh36mEB9OIcVaNPUQJ8T0",
-    authDomain: "instahype-52359.firebaseapp.com",
-    projectId: "instahype-52359",
-    storageBucket: "instahype-52359.firebasestorage.app",
-    messagingSenderId: "599546947938",
-    appId: "1:599546947938:web:d31eb041c8b370623d643b",
-    measurementId: "G-2F860HVDL1"
-  };
+// AD + COIN
+document.getElementById("playBtn").onclick = () => {
+  playBtn.disabled = true;
+  show_11310206().then(() => {
+    coins += 5;
+    localStorage.setItem("coins", coins);
+    updateUI();
+    alert("+5 Coins mil gaye!");
+    playBtn.disabled = false;
+  }).catch(()=> {
+    alert("Ad pura dekho");
+    playBtn.disabled = false;
+  });
+}
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+// GOOGLE SHEET ME BHEJO
+document.getElementById("redeemBtn").onclick = () => {
+  let link = prompt("Insta Reel Link ya UPI ID dalo:");
+  if(link){
+    let data = {
+      link: link,
+      coins: 100,
+      username: "user_" + Date.now()
+    };
+
+    fetch("https://script.google.com/macros/s/AKfycbw33O3Y3xqtM9L9RoISjEMj15pAF6FT9Y4kcfNMk5ig3LDZt08Rqr2_4SA2hURy-xbQ/exec", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+
+    coins -= 100;
+    localStorage.setItem("coins", coins);
+    updateUI();
+    alert("Request bhej di gayi ✅ Sheet check kar");
+  }
+}
 </script>
 </body>
 </html>
