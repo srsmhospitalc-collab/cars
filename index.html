@@ -16,129 +16,65 @@
     body {
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      min-height: 100vh;
-      padding: 20px;
-      overflow-x: hidden;
+      color: white; min-height: 100vh; padding: 20px;
     }
-    
     .container { max-width: 400px; margin: 0 auto; animation: fadeIn 0.5s; }
     @keyframes fadeIn { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
-    
     .glass {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px;
+      padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     }
-    
     .header { text-align: center; }
-    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
-    .header p { opacity: 0.8; font-size: 14px; }
-    
+    .header h1 { font-size: 28px; font-weight: 700; }
     .coin-box { text-align: center; }
-    .coin-box .label { font-size: 14px; opacity: 0.8; }
     .coin-box .value { 
       font-size: 48px; font-weight: 700; 
       background: linear-gradient(45deg, #FFD700, #FFA500);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       animation: pulse 2s infinite;
     }
     @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    
     .stats { display: flex; justify-content: space-around; text-align: center; }
-    .stat-item .num { font-size: 22px; font-weight: 600; }
-    .stat-item .txt { font-size: 12px; opacity: 0.7; }
-    
     .btn {
-      width: 100%; padding: 18px;
-      border: none; border-radius: 15px;
-      font-size: 18px; font-weight: 600;
-      cursor: pointer; transition: all 0.3s;
-      margin-bottom: 12px;
-      position: relative; overflow: hidden;
+      width: 100%; padding: 18px; border: none; border-radius: 15px;
+      font-size: 18px; font-weight: 600; cursor: pointer; margin-bottom: 12px;
     }
-    .btn-play {
-      background: linear-gradient(45deg, #00F260, #0575E6);
-      color: white;
-      box-shadow: 0 4px 15px rgba(0,242,96,0.4);
-    }
-    .btn-play:disabled { background: gray; cursor: not-allowed; }
-    .btn-redeem {
-      background: linear-gradient(45deg, #FF512F, #F09819);
-      color: white;
-      box-shadow: 0 4px 15px rgba(255,81,47,0.4);
-    }
-    .btn:hover { transform: translateY(-2px); }
-    .btn:active { transform: scale(0.98); }
-    
-    .timer { text-align: center; font-size: 14px; opacity: 0.9; margin-top: 10px; }
+    .btn-play { background: linear-gradient(45deg, #00F260, #0575E6); color: white; }
+    .btn-redeem { background: linear-gradient(45deg, #FF512F, #F09819); color: white; }
+    .btn:disabled { background: gray; cursor: not-allowed; }
     .msg { text-align: center; padding: 10px; border-radius: 10px; margin-top: 10px; display: none; }
     .msg.success { background: rgba(0,255,0,0.2); display: block; }
     .msg.error { background: rgba(255,0,0,0.2); display: block; }
-    
-    .floating-coin {
-      position: fixed; font-size: 24px;
-      animation: floatUp 1s ease-out forwards;
-      pointer-events: none;
-    }
-    @keyframes floatUp {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(-100px); }
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    
-    <div class="glass header">
-      <h1>💰 Coin Rush</h1>
-      <p>Watch Ad. Play. Earn.</p>
-    </div>
-    
+    <div class="glass header"><h1>💰 Coin Rush</h1></div>
     <div class="glass coin-box">
-      <div class="label">Your Balance</div>
+      <div>Your Balance</div>
       <div class="value" id="coins">0</div>
     </div>
-    
     <div class="glass stats">
-      <div class="stat-item">
-        <div class="num" id="gamesToday">0</div>
-        <div class="txt">Today</div>
-      </div>
-      <div class="stat-item">
-        <div class="num">5</div>
-        <div class="txt">Per Game</div>
-      </div>
-      <div class="stat-item">
-        <div class="num">100</div>
-        <div class="txt">To Redeem</div>
-      </div>
+      <div><div id="gamesToday">0</div><div>Today</div></div>
+      <div><div>5</div><div>Per Game</div></div>
+      <div><div>100</div><div>To Redeem</div></div>
     </div>
-    
     <button class="btn btn-play" id="playBtn">▶️ Watch Ad & Play</button>
-    <div class="timer" id="timer"></div>
-    
+    <div id="timer"></div>
     <button class="btn btn-redeem" id="redeemBtn">💸 Redeem 100 Coins</button>
-    
     <div class="msg" id="msg"></div>
-    
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    tg.setHeaderColor('#764ba2');
     
     // 1. FIREBASE CONFIG - Yaha apna config daal
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
+      apiKey: "PASTE_YOUR_API_KEY",
+      authDomain: "PASTE_YOUR_AUTH_DOMAIN",
+      projectId: "PASTE_YOUR_PROJECT_ID",
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -146,69 +82,54 @@
     const auth = firebase.auth();
     
     let userId = "";
-    let userData = {};
     
-    // 2. TELEGRAM LOGIN
     auth.signInAnonymously();
     auth.onAuthStateChanged(async (user) => {
       if(user && tg.initDataUnsafe.user){
         userId = tg.initDataUnsafe.user.id.toString();
         const userRef = db.collection("users").doc(userId);
-        
-        // Pehli baar hai to entry banao
         const doc = await userRef.get();
         if(!doc.exists){
           await userRef.set({
             telegram_id: userId,
             username: tg.initDataUnsafe.user.username || "User",
-            coins: 0, games_today: 0, 
-            last_play_time: null, last_redeem_date: null
+            coins: 0, games_today: 0, last_play_time: null, last_redeem_date: null
           });
         }
         loadUser();
       }
     });
     
-    // 3. LOAD USER DATA
     function loadUser(){
       db.collection("users").doc(userId).onSnapshot(doc => {
-        userData = doc.data();
-        document.getElementById("coins").innerText = userData.coins;
-        document.getElementById("gamesToday").innerText = userData.games_today;
-        checkTimer();
+        const data = doc.data();
+        document.getElementById("coins").innerText = data.coins;
+        document.getElementById("gamesToday").innerText = data.games_today;
+        checkTimer(data);
       });
     }
     
-    // 4. 5 MIN TIMER
-    function checkTimer(){
-      const last = userData.last_play_time?.toMillis() || 0;
+    function checkTimer(data){
+      const last = data.last_play_time?.toMillis() || 0;
       const diff = 5*60*1000 - (Date.now() - last);
-      if(diff > 0 && userData.games_today > 0){
+      if(diff > 0 && data.games_today > 0){
         document.getElementById("playBtn").disabled = true;
         document.getElementById("timer").innerText = `Wait: ${Math.ceil(diff/60000)} min`;
-        setTimeout(checkTimer, 60000);
       } else {
         document.getElementById("playBtn").disabled = false;
         document.getElementById("timer").innerText = "";
       }
     }
     
-    // 5. PLAY BUTTON
     document.getElementById("playBtn").onclick = async () => {
       showMsg("Ad loading...", "success");
-      // Yaha Monetag/Telegram Ad code lagega
       setTimeout(async () => {
         const playGame = functions.httpsCallable('playGame');
         const res = await playGame();
-        if(res.data.error) showMsg(res.data.error, "error");
-        else {
-          showMsg("+5 Coins Earned!", "success");
-          showFloatingCoin();
-        }
+        showMsg(res.data.error || "+5 Coins Earned!", res.data.error ? "error" : "success");
       }, 3000);
     }
     
-    // 6. REDEEM BUTTON
     document.getElementById("redeemBtn").onclick = async () => {
       const upi = prompt("Enter UPI ID:");
       if(!upi) return;
@@ -219,19 +140,8 @@
     
     function showMsg(text, type){
       const msg = document.getElementById("msg");
-      msg.className = `msg ${type}`;
-      msg.innerText = text;
+      msg.className = `msg ${type}`; msg.innerText = text;
       setTimeout(() => msg.style.display = 'none', 3000);
-    }
-    
-    function showFloatingCoin(){
-      const coin = document.createElement('div');
-      coin.className = 'floating-coin';
-      coin.innerText = '💰 +5';
-      coin.style.left = Math.random()*80 + 10 + '%';
-      coin.style.top = '50%';
-      document.body.appendChild(coin);
-      setTimeout(() => coin.remove(), 1000);
     }
   </script>
 </body>
