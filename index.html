@@ -3,163 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coin Earn App</title>
+<title>CoinX - Earn & Redeem</title>
+<link rel="stylesheet" href="style.css">
 <script src='//libtl.com/sdk.js' data-zone='11310206' data-sdk='show_11310206'></script>
-<style>
-* {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif}
-body {background: linear-gradient(135deg,#667eea,#764ba2); min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px}
-.container {background:#fff; border-radius:20px; padding:30px; width:100%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.3)}
-.header {text-align:center; margin-bottom:25px}
-.header h1 {color:#764ba2; font-size:28px}
-.coins {font-size:40px; color:#ffc107; font-weight:bold; margin:10px 0}
-.btn {width:100%; padding:16px; border:none; border-radius:12px; font-size:18px; font-weight:600; cursor:pointer; margin:10px 0; transition:0.3s}
-#playBtn {background: linear-gradient(90deg,#00c851,#00ff6a); color:#fff}
-#playBtn:disabled {background:gray; cursor:not-allowed}
-#redeemBtn {background: linear-gradient(90deg,#ff416c,#ff4b2b); color:#fff}
-#redeemBtn:disabled {background:gray}
-.modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center}
-.modal-content {background:#fff; padding:25px; border-radius:15px; width:90%; max-width:350px}
-.question {font-size:20px; margin-bottom:15px; color:#333}
-.input {width:100%; padding:12px; border:2px solid #ddd; border-radius:8px; font-size:16px; margin-bottom:15px}
-.submit {background:#667eea; color:#fff; border:none; padding:12px; width:100%; border-radius:8px; font-size:16px}
-.timer {text-align:center; color:#ff416c; font-size:14px; margin-top:10px}
-</style>
 </head>
 <body>
+<div class="bg-blob"></div>
+<div class="bg-blob2"></div>
 
 <div class="container">
-  <div class="header">
-    <h1>💰 Earn Coins</h1>
-    <div class="coins"><span id="coins">0</span> Coins</div>
-    <div id="limitText"></div>
+  <div class="logo">💎 CoinX</div>
+  <div class="card">
+    <p class="label">Your Balance</p>
+    <h1 id="coins">0</h1>
+    <p class="sub" id="limitText">Today: 0/10</p>
   </div>
 
-  <button id="playBtn">▶️ Watch Ad & Play</button>
-  <button id="redeemBtn" disabled>🎁 Redeem 100 Coins</button>
-  <div class="timer" id="timer"></div>
+  <button id="playBtn" class="btn btn-primary">
+    <span>▶️ Watch Ad & Earn 5 Coins</span>
+  </button>
+  
+  <button id="redeemBtn" class="btn btn-danger" disabled>
+    <span>🎁 Redeem 100 Coins</span>
+  </button>
+  
+  <p id="timer" class="timer"></p>
 </div>
 
-<!-- QUESTION MODAL -->
-<div class="modal" id="questionModal">
-  <div class="modal-content">
-    <div id="qCount"></div>
-    <div class="question" id="question"></div>
-    <input type="number" class="input" id="answer" placeholder="Answer dalo">
-    <button class="submit" id="submitAns">Submit</button>
+<!-- Question Modal -->
+<div id="qModal" class="modal">
+  <div class="modal-box">
+    <h2 id="qCount">Question 1/3</h2>
+    <h1 id="question">2 + 2 = ?</h1>
+    <input type="number" id="answer" placeholder="Answer here">
+    <button id="submitAns" class="btn btn-primary">Submit</button>
   </div>
 </div>
 
-<script>
-let coins = parseInt(localStorage.getItem("coins")) || 0;
-let today = new Date().toDateString();
-let playData = JSON.parse(localStorage.getItem("playData")) || {date:today, count:0, lastTime:0};
-let lastRedeem = localStorage.getItem("lastRedeem") || 0;
-
-if(playData.date !== today){ playData = {date:today, count:0, lastTime:0}; }
-
-updateUI();
-
-// BUTTON 1: PLAY
-playBtn.onclick = async () => {
-  if(playData.count >= 10){ alert("Aaj ka 10/10 limit complete! Kal 12 baje ke baad aana"); return; }
-  if(Date.now() - playData.lastTime < 300000){ 
-    let left = Math.ceil((300000 - (Date.now() - playData.lastTime))/60000);
-    alert(left + " min baad try karo"); 
-    return; 
-  }
-
-  playBtn.disabled = true;
-  try{
-    await show_11310206(); // AD DEKHA
-    startQuestions(); // 3 QUESTION
-  }catch{
-    alert("Ad skip mat karo");
-    playBtn.disabled = false;
-  }
-}
-
-// 3 QUESTION LOGIC
-let qNo = 0;
-function startQuestions(){
-  qNo = 0;
-  askQuestion();
-}
-
-function askQuestion(){
-  if(qNo >= 3){
-    // 3 khatam, 5 coin do
-    coins += 5;
-    playData.count += 1;
-    playData.lastTime = Date.now();
-    saveData();
-    updateUI();
-    alert("5 Coins mil gaye! Total: " + coins);
-    playBtn.disabled = false;
-    return;
-  }
-  
-  let a = Math.floor(Math.random()*10)+1;
-  let b = Math.floor(Math.random()*10)+1;
-  let ans = a+b;
-  
-  questionModal.style.display = "flex";
-  qCount.innerText = "Question " + (qNo+1) + "/3";
-  question.innerText = a + " + " + b + " = ?";
-  
-  submitAns.onclick = () => {
-    questionModal.style.display = "none";
-    answer.value = "";
-    qNo++;
-    askQuestion();
-  }
-}
-
-// BUTTON 2: REDEEM
-redeemBtn.onclick = () => {
-  let twoDays = 2*24*60*60*1000;
-  if(Date.now() - lastRedeem < twoDays){
-    let left = Math.ceil((twoDays - (Date.now() - lastRedeem))/(24*60*60*1000));
-    alert(left + " din baad dobara redeem kar sakte ho");
-    return;
-  }
-  
-  let link = prompt("Insta Reel Link ya UPI ID dalo:");
-  if(link){
-    fetch("https://script.google.com/macros/s/AKfycbw33O3Y3xqtM9L9RoISjEMj15pAF6FT9Y4kcfNMk5ig3LDZt08Rqr2_4SA2hURy-xbQ/exec", {
-      method: "POST",
-      body: JSON.stringify({link:link, coins:100, username:"user_"+Date.now()})
-    });
-    coins -= 100;
-    lastRedeem = Date.now();
-    localStorage.setItem("lastRedeem", lastRedeem);
-    saveData();
-    updateUI();
-    alert("Request bhej di gayi ✅ 2 din me dobara kar sakte ho");
-  }
-}
-
-function saveData(){
-  localStorage.setItem("coins", coins);
-  localStorage.setItem("playData", JSON.stringify(playData));
-}
-
-function updateUI(){
-  coinsEl.innerText = coins;
-  redeemBtn.disabled = coins < 100;
-  limitText.innerText = "Aaj: " + playData.count + "/10";
-  
-  // 5 min timer
-  let diff = 300000 - (Date.now() - playData.lastTime);
-  if(diff > 0 && playData.count < 10){
-    timer.innerText = "Next in: " + Math.ceil(diff/60000) + " min";
-    playBtn.disabled = true;
-    setTimeout(updateUI, 1000);
-  } else {
-    timer.innerText = "";
-    if(playData.count < 10) playBtn.disabled = false;
-  }
-}
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
