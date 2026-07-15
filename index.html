@@ -123,13 +123,23 @@
     }
     
     document.getElementById("playBtn").onclick = async () => {
-      showMsg("Ad loading...", "success");
-      setTimeout(async () => {
+    showMsg("Ad loading...", "success");
+    document.getElementById("playBtn").disabled = true;
+
+    // MONETAG AD CHALAO
+    show_11310206().then(async () => {
+        // AD KHATAM HONE KE BAAD REWARD DO
         const playGame = functions.httpsCallable('playGame');
         const res = await playGame();
         showMsg(res.data.error || "+5 Coins Earned!", res.data.error ? "error" : "success");
-      }, 3000);
-    }
+        document.getElementById("playBtn").disabled = false;
+        
+    }).catch(() => {
+        // Agar ad skip kar di
+        showMsg("Ad poora dekho tabhi coin milega", "error");
+        document.getElementById("playBtn").disabled = false;
+    });
+}
     
     document.getElementById("redeemBtn").onclick = async () => {
       const upi = prompt("Enter UPI ID:");
