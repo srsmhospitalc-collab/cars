@@ -1,147 +1,145 @@
-const BOT_TOKEN = "8895544903:AAHbD3V0yU-4vdXl8Ih_EadrmnZAgJWlHtQ"; // tera token
-const CHAT_ID = "7732391940"; // tera chat id
+const BOT_TOKEN = "8895544903:AAHbD3V0yU-4vdXl8Ih_EadrmnZAgJWlHtQ";
+const CHAT_ID = "7732391940";
+
+let tg = window.Telegram.WebApp;
+tg.expand();
 
 let coins = parseInt(localStorage.getItem("coins")) || 0;
-let username = localStorage.getItem("username");
+let username = tg.initDataUnsafe?.user?.first_name || localStorage.getItem("username") || "User";
+localStorage.setItem("username", username);
+
 let today = new Date().toDateString();
-let playData = JSON.parse(localStorage.getItem("playData")) || {date:today, count:0, lastTime:0};
+let playData = JSON.parse(localStorage.getItem("playData")) || {date:today, level:1, qNo:0, lastTime:0};
 let lastRedeem = parseInt(localStorage.getItem("lastRedeem")) || 0;
 
-// Pehli baar naam maangega
-if(!username){
-  username = prompt("Apna naam ya Username dalo:");
-  if(username) localStorage.setItem("username", username);
-}
-
-if(playData.date !== today){ playData = {date:today, count:0, lastTime:0}; }
+if(playData.date!== today){ playData = {date:today, level:1, qNo:0, lastTime:0}; }
 
 updateUI();
+renderLevels();
 
-// BUTTON 1 CLICK - AD + QUESTIONS
-document.getElementById("playBtn").onclick = async () => {
-  if(playData.count >= 10){ alert("Aaj ka limit 10/10 complete! Kal 12 baje ke baad aana"); return; }
-  
-  let diff = 300000 - (Date.now() - playData.lastTime);
-  if(diff > 0){ 
-    alert(Math.ceil(diff/60000) + " min baad try karo"); 
-    return; 
-  }
-
-  document.getElementById("playBtn").disabled = true;
-  try{
-    await show_11310206(); // AD CHALA
-    startQuestions(); // QUESTION START
-  }catch{
-    alert("Ad pura dekho bhai");
-    document.getElementById("playBtn").disabled = false;
-  }
+// CHECK KARE LEVEL ME AD HAI YA NAHI - 3,6,9...
+function isAdLevel(lvl){
+  return lvl % 3 === 0;
 }
 
-// 3 QUESTION SYSTEM
-let qNo = 0;
-function startQuestions(){
-  qNo = 0;
+function renderLevels(){
+  let html = "";
+  for(let i=1; i<=30; i++){
+    let locked = i > playData.level;
+    let isAd = isAdLevel(i);
+    let adTag = isAd? "🪙+50 AD" : "Free";
+
+    html += `
+    <div class="level-box ${locked?'locked':''} ${isAd?'ad-level':''}">
+      ${isAd? '<span class="ad-badge">AD</span>' : ''}
+      <h3>Level ${i} ${locked?'🔒':''}</h3>
+      <p>Reward: ${adTag}</p>
+      <button class="btn btn-play" ${locked?'disabled':''} onclick="playLevel(${i})">
+        ${locked?'Locked': 'Play'}
+      </button>
+    </div>`;
+  }
+  document.getElementById("levels").innerHTML = html;
+}
+
+async function playLevel(lvl){
+  if(playData.level > 30){ alert("Aaj ka 30 level complete! Kal 12 baje ke baad aana"); return; }
+
+  let diff = 5000 - (Date.now() - playData.lastTime);
+  if(diff > 0){ alert(Math.ceil(diff/1000) + " sec baad try karo"); return; }
+
+  // AGAR AD WALA LEVEL HAI TO AD CHALAO
+  if(isAdLevel(lvl)){
+    try{
+      await show_11310206(); // TERA ADS CODE YAHI LAGEGA
+    }catch{
+      alert("Ad pura dekho bhai");
+      return;
+    }
+  }
+  startQuestions(lvl);
+}
+
+function startQuestions(lvl){
+  playData.qNo = 0;
+  playData.currentLevel = lvl;
+  document.getElementById("qModal").style.display = "flex";
   askQuestion();
 }
 
 function askQuestion(){
-  if(qNo >= 3){
-    coins += 5;
-    playData.count += 1;
+  if(playData.qNo >= 10){
+    let earned = 0;
+    if(isAdLevel(playData.currentLevel)) earned = 50; // SIRF AD WALE LEVEL ME 50 COIN
+
+    coins += earned;
+    playData.level += 1;
     playData.lastTime = Date.now();
     saveData();
     updateUI();
-    alert("Shabash! +5 Coins mil gaye");
-    document.getElementById("playBtn").disabled = false;
+    renderLevels();
+    document.getElementById("qModal").style.display = "none";
+    alert(`Level Clear! ${earned>0?'+50 Coins mil gaye':''}`);
     return;
   }
-  
-  let a = Math.floor(Math.random()*20)+1;
-  let b = Math.floor(Math.random()*20)+1;
-  
-  document.getElementById("qModal").style.display = "flex";
-  document.getElementById("qCount").innerText = `Question ${qNo+1}/3`;
-  document.getElementById("question").innerText = `${a} + ${b} = ?`;
-  
+
+  let a = Math.floor(Math.random()*50)+1;
+  let b = Math.floor(Math.random()*50)+1;
+
+  document.getElementById("qCount").innerText = `Level ${playData.currentLevel} - Q ${playData.qNo+1}/10`;
+  document.getElementById("question").innerText = `${a} + ${b} =?`;
+
   document.getElementById("submitAns").onclick = () => {
-    document.getElementById("qModal").style.display = "none";
-    document.getElementById("answer").value = "";
-    qNo++;
-    askQuestion();
+    let ans = parseInt(document.getElementById("answer").value);
+    if(ans == a+b){
+      playData.qNo++;
+      document.getElementById("answer").value = "";
+      askQuestion();
+    } else {
+      alert("Galat jawab! Dubara try karo");
+    }
   }
 }
 
-// BUTTON 2 CLICK - REDEEM MODAL KHOLEGA
-document.getElementById("redeemBtn").onclick = () => {
-  openRedeemModal();
-}
+// REDEEM LOGIC
+document.getElementById("confirmRedeem").onclick = async () => {
+  let link = document.getElementById("redeemLink").value;
+  let error = document.getElementById("redeemError");
+  error.innerText = "";
 
-// REDEEM MODAL FUNCTION - TELEGRAM WALA
-function openRedeemModal(){
-  let modal = document.createElement("div");
-  modal.id = "redeemModal";
-  modal.className = "modal";
-  modal.style.display = "flex";
-  
-  modal.innerHTML = `
-    <div class="modal-box">
-      <h2>🎁 Redeem Coins</h2>
-      <p>Balance: <b>${coins}</b> Coins</p>
-      <input type="text" id="redeemLink" placeholder="Insta Reel Link ya UPI ID dalo" style="width:100%; padding:12px; margin:15px 0; border-radius:8px; border:2px solid #333; background:#111; color:#fff">
-      <button id="confirmRedeem" class="btn btn-danger">Submit Request</button>
-      <button id="closeRedeem" class="btn" style="background:#444">Cancel</button>
-      <p id="redeemError" style="color:#ff416c; margin-top:10px"></p>
-    </div>
-  `;
-  document.body.appendChild(modal);
+  if(coins < 1000){
+    error.innerText = "1000 coin chahiye redeem ke liye.";
+    return;
+  }
 
-  document.getElementById("closeRedeem").onclick = () => modal.remove();
-  
-  document.getElementById("confirmRedeem").onclick = async () => {
-    let link = document.getElementById("redeemLink").value;
-    let error = document.getElementById("redeemError");
-    
-    // CHECK 1: 100 COIN HAI KYA?
-    if(coins < 100){
-      error.innerText = "Tere paas 100 coin nahi hai. Pehle earn kar.";
-      return;
-    }
-    
-    // CHECK 2: 2 DIN HO GAYE KYA?
-    let twoDays = 2*24*60*60*1000;
-    if(Date.now() - lastRedeem < twoDays){
-      let left = Math.ceil((twoDays - (Date.now() - lastRedeem))/(24*60*60*1000));
-      error.innerText = `Ruko! ${left} din baad dobara redeem kar sakte ho`;
-      return;
-    }
-    
-    if(link.trim() == ""){
-      error.innerText = "Link ya UPI ID dalna zaroori hai";
-      return;
-    }
+  let twoDays = 2*24*60*60*1000;
+  if(Date.now() - lastRedeem < twoDays){
+    let leftHours = Math.ceil((twoDays - (Date.now() - lastRedeem))/(1000*60*60));
+    error.innerText = `Ruko! ${leftHours} ghante baad dobara redeem kar sakte ho`;
+    return;
+  }
 
-    // SAB THEEK HAI - TELEGRAM PE BHEJO
-    let msg = `🔔 NEW REDEEM REQUEST
+  if(link.trim() == ""){
+    error.innerText = "Link ya UPI ID dalna zaroori hai";
+    return;
+  }
+
+  let msg = `🔔 NEW REDEEM REQUEST
 
 👤 Username: ${username}
 🔗 Link: ${link}
-🪙 Coins: 100
+🪙 Coins: 1000
 ⏰ Time: ${new Date().toLocaleString("en-IN", {timeZone: "Asia/Kolkata"})}`;
 
-    try {
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`);
-    } catch(e) {
-      console.log("Telegram error", e)
-    }
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`);
 
-    coins -= 100;
-    lastRedeem = Date.now();
-    localStorage.setItem("lastRedeem", lastRedeem);
-    saveData();
-    updateUI();
-    modal.remove();
-    alert("Request bhej di gayi ✅ 2 din baad dobara kar sakte ho");
-  }
+  coins -= 1000;
+  lastRedeem = Date.now();
+  localStorage.setItem("lastRedeem", lastRedeem);
+  saveData();
+  updateUI();
+  document.getElementById("redeemLink").value = "";
+  alert("Request bhej di gayi ✅ 2 din baad dobara kar sakte ho");
 }
 
 function saveData(){
@@ -151,16 +149,20 @@ function saveData(){
 
 function updateUI(){
   document.getElementById("coins").innerText = coins;
-  document.getElementById("redeemBtn").disabled = coins < 100;
-  document.getElementById("limitText").innerText = `Today: ${playData.count}/10`;
-  
-  let diff = 300000 - (Date.now() - playData.lastTime);
-  if(diff > 0 && playData.count < 10){
-    document.getElementById("timer").innerText = `Next in: ${Math.ceil(diff/60000)} min`;
-    document.getElementById("playBtn").disabled = true;
-    setTimeout(updateUI, 1000);
+  document.getElementById("username").innerText = username;
+  document.getElementById("limitText").innerText = `Today: ${playData.level-1}/30 Levels`;
+  document.getElementById("confirmRedeem").disabled = coins < 1000;
+}
+
+function showTab(tab){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  if(tab=='game'){
+    document.getElementById("gameTab").style.display="block";
+    document.getElementById("redeemTab").style.display="none";
+    document.querySelectorAll(".tab")[0].classList.add("active")
   } else {
-    document.getElementById("timer").innerText = "";
-    if(playData.count < 10) document.getElementById("playBtn").disabled = false;
+    document.getElementById("gameTab").style.display="none";
+    document.getElementById("redeemTab").style.display="block";
+    document.querySelectorAll(".tab")[1].classList.add("active")
   }
 }
