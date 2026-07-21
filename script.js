@@ -120,7 +120,7 @@ document.getElementById("confirmRedeem").onclick = async () => {
   }
 
   if(link.trim() == ""){
-    error.innerText = "only instagram link  dalna zaroori hai";
+    error.innerText = "only instagram Reel link dalna zaroori hai";
     return;
   }
 
