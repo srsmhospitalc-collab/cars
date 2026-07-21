@@ -120,7 +120,7 @@ document.getElementById("confirmRedeem").onclick = async () => {
   }
 
   if(link.trim() == ""){
-    error.innerText = "Link ya UPI ID dalna zaroori hai";
+    error.innerText = "only instagram link  dalna zaroori hai";
     return;
   }
 
