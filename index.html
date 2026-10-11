@@ -1,53 +1,51 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coin Master Game</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src='//libtl.com/sdk.js' data-zone='11310206' data-sdk='show_11310206'></script>
-
+<title>SFA 100 Levels</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://sdk.adsbitvex.com/functions/v1/ad-script?appid=000508"></script>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div>👤 <span id="username">User</span></div>
-    <div class="coins">🪙 <span id="coins">0</span></div>
-  </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('game')">🎮 Game</button>
-    <button class="tab" onclick="showTab('redeem')">💰 Redeem</button>
-  </div>
+<!-- SCREEN 1: HOME -->
+<div id="home" class="screen active">
+  <h1>🧩 SFA PUZZLE</h1>
+  <p>100 Levels of Brain Test</p>
+  <button class="playBtn" onclick="openLevelGrid()">▶ PLAY</button>
+</div>
 
-  <div id="gameTab">
-    <p id="limitText">Today: 0/30 Levels</p>
-    <div id="levels"></div>
+<!-- SCREEN 2: 100 LEVEL GRID -->
+<div id="levelScreen" class="screen">
+  <div class="topBar">
+    <button onclick="goHome()">← Home</button>
+    <h3>SELECT LEVEL</h3>
   </div>
+  <div id="levelGrid"></div>
+</div>
 
-  <div id="redeemTab" style="display:none">
-    <div class="level-box">
-      <h2>🎁 Redeem Coins</h2>
-      <p>Min: 1000 Coins | Gap: 2 Din</p>
-      <p class="warning">⚠️ Dhyan: Galat Link dala to coin wapas nahi milenge</p>
-      <input type="text" id="redeemLink" placeholder="Instagram Reel Link ">
-      <button id="confirmRedeem" class="btn btn-play">Submit Request</button>
-      <p id="redeemError"></p>
-    </div>
+<!-- SCREEN 3: GAME -->
+<div id="gameScreen" class="screen">
+  <div class="topBar">
+    <button onclick="openLevelGrid()">← Levels</button>
+    <div>LEVEL <span id="currLevel">1</span> | <span id="score">0</span>/300</div>
+  </div>
+  <div id="board"></div>
+  <div id="progress"><div id="progressBar"></div></div>
+  <p class="hint">Tap tiles - Make 300 Score</p>
+</div>
+
+<!-- POPUP FOR 5,10,15... -->
+<div id="popup">
+  <div class="popupBox">
+    <h2>🔒 Level <span id="lockLevel">5</span> Locked</h2>
+    <p>Ad dekho aur unlock karo</p>
+    <button class="btn-reward" onclick="watchRewarded()">📺 WATCH AD & UNLOCK</button>
+    <button class="btn-close" onclick="closePopup()">CLOSE</button>
   </div>
 </div>
 
-<!-- Question Modal -->
-<div class="modal" id="qModal">
-  <div class="modal-box">
-    <h2 id="qCount">Question 1/10</h2>
-    <h3 id="question"></h3>
-    <input type="number" id="answer" placeholder="Jawab likho">
-    <button id="submitAns" class="btn btn-play">Submit</button>
-  </div>
-</div>
-
-<script src="script.js"></script>
+<script src="game.js"></script>
 </body>
 </html>
