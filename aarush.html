@@ -4,69 +4,71 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AARUSH - SFA GUNKA</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
-<style>body{font-family:'Space Grotesk'; background:#0a0a0b;}</style>
 </head>
-<body class="text-white p-6 md:p-10">
-<header class="flex justify-between items-center mb-10">
-  <div><div class="text-2xl font-bold">SFA <span class="text-yellow-400">GUNKA</span></div><div class="text-xs text-zinc-500">CREATOR: AARUSH</div></div>
-  <a href="admin.html" class="text-xs bg-zinc-900 px-4 py-2 rounded-full border border-zinc-800">Admin View</a>
-</header>
+<body class="bg-[#0a0a0b] text-white p-6">
+<h1 class="text-2xl font-bold">SFA <span class="text-yellow-400">GUNKA</span> - AARUSH</h1>
+<p class="text-xs text-zinc-500">Channel: Panther Gamers (-1002897263402)</p>
 
-<!-- ONLY COMPLETE ADS - NO WATCH ADS HERE -->
-<div class="bg-yellow-400 text-black p-8 rounded-[28px] max-w-md">
-  <p class="text-xs font-bold opacity-60 tracking-widest">COMPLETE ADS</p>
-  <p id="myCount" class="text-6xl font-bold mt-2">0</p>
-  <p class="text-sm opacity-70 mt-2">Teri videos pe pure dekhe gaye ads</p>
+<div class="mt-6 bg-yellow-400 text-black p-6 rounded-[24px]">
+  <p class="text-xs font-bold opacity-60">COMPLETE ADS</p>
+  <p id="myCount" class="text-5xl font-bold">0</p>
 </div>
 
-<!-- UPLOAD SECTION - Permission yahi hai -->
-<div class="mt-10 bg-zinc-900 rounded-[28px] p-8 border border-zinc-800 max-w-2xl">
-  <h3 class="text-xl font-bold mb-6">Upload Video</h3>
-  <div class="border-2 border-dashed border-zinc-700 rounded-2xl p-10 text-center">
-    <input type="file" id="fileInput" accept="video/*" class="hidden">
-    <button onclick="document.getElementById('fileInput').click()" class="bg-white text-black px-8 py-3 rounded-full font-bold">Select Video</button>
-    <p class="text-xs text-zinc-500 mt-3">MP4, Max 100MB</p>
-  </div>
-  <input id="titleInput" placeholder="Video Title" class="w-full mt-6 bg-black border border-zinc-800 rounded-xl px-4 py-3 outline-none focus:border-yellow-400">
-  <button onclick="upload()" class="w-full mt-4 bg-yellow-400 text-black py-4 rounded-xl font-bold">UPLOAD AS AARUSH</button>
-  <p id="status" class="text-xs text-zinc-500 mt-3"></p>
+<div class="mt-8 bg-zinc-900 p-6 rounded-[24px] border border-zinc-800 max-w-xl">
+  <h3 class="font-bold mb-4">Upload Video (Telegram Auto-Post)</h3>
+  <input type="file" id="fileInput" accept="video/*" class="w-full bg-black border border-zinc-800 rounded-xl p-3">
+  <input id="titleInput" placeholder="Video Title" class="w-full mt-3 bg-black border border-zinc-800 rounded-xl px-4 py-3">
+  <button onclick="upload()" id="uploadBtn" class="w-full mt-4 bg-yellow-400 text-black py-4 rounded-xl font-bold">UPLOAD TO PANTHER GAMERS</button>
+  <p id="status" class="text-xs text-zinc-500 mt-3">Ready</p>
 </div>
-
-<div id="myVideos" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10"></div>
 
 <script>
-const UPLOADER = "Aarush";
+const TOKEN = "8895544903:AAHbD3V0yU-4vdXl8Ih_EadrmnZAgJWlHtQ";
+const CHANNEL_ID = "-1002897263402";
 
-function upload(){
+async function upload(){
   const file = document.getElementById('fileInput').files[0];
-  const title = document.getElementById('titleInput').value || 'Untitled';
-  if(!file) return alert('Video select kar');
+  const title = document.getElementById('titleInput').value || "New Video by Aarush";
+  if(!file) return alert('Video select kar bhai');
 
-  let videos = JSON.parse(localStorage.getItem('sfa_videos')||'[]');
-  videos.push({id: Date.now(), title, uploader: UPLOADER, name: file.name});
-  localStorage.setItem('sfa_videos', JSON.stringify(videos));
-  document.getElementById('status').innerText = 'Uploaded: ' + title + ' by ' + UPLOADER;
-  loadVideos(); loadCount();
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true;
+  btn.innerText = "UPLOADING...";
+  document.getElementById('status').innerText = "Panther Gamers pe bhej raha hu...";
+
+  const formData = new FormData();
+  formData.append('chat_id', CHANNEL_ID);
+  formData.append('video', file);
+  formData.append('caption', `🎬 ${title}\n\n👤 By Aarush\n🔥 SFA GUNKA\n\n#SFA #GUNKA`);
+  formData.append('parse_mode', 'HTML');
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TOKEN}/sendVideo`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if(data.ok){
+      document.getElementById('status').innerText = "✅ Ho gaya! Channel pe post ID: " + data.result.message_id;
+      btn.innerText = "UPLOADED ✅";
+      // Complete count badha
+      let c = JSON.parse(localStorage.getItem('sfa_complete')||'{}');
+      c['Aarush'] = (c['Aarush']||0)+1;
+      localStorage.setItem('sfa_complete', JSON.stringify(c));
+      document.getElementById('myCount').innerText = c['Aarush'];
+    } else {
+      document.getElementById('status').innerText = "❌ Error: " + data.description;
+      btn.disabled = false;
+      btn.innerText = "TRY AGAIN";
+    }
+  } catch(e){
+    document.getElementById('status').innerText = "❌ Network error: Bot ko channel ka admin banaya kya?";
+    btn.disabled = false;
+  }
 }
 
-function loadCount(){
-  let c=JSON.parse(localStorage.getItem('sfa_complete')||'{}');
-  document.getElementById('myCount').innerText = c[UPLOADER]||0;
-}
-
-function loadVideos(){
-  let videos = JSON.parse(localStorage.getItem('sfa_videos')||'[]').filter(v=>v.uploader===UPLOADER);
-  document.getElementById('myVideos').innerHTML = videos.map(v=>`
-    <div class="bg-zinc-900 rounded-2xl p-3 border border-zinc-800">
-      <div class="aspect-video bg-zinc-800 rounded-xl"></div>
-      <div class="font-semibold mt-3">${v.title}</div>
-      <div class="text-xs text-zinc-500">by ${v.uploader}</div>
-    </div>
-  `).join('');
-}
-
-loadCount(); loadVideos();
+let c = JSON.parse(localStorage.getItem('sfa_complete')||'{}');
+document.getElementById('myCount').innerText = c['Aarush']||0;
 </script>
 </body>
 </html>
