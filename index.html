@@ -1,54 +1,53 @@
-<div id="videoGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6"></div>
-
+<div id="videoGrid" class="grid grid-cols-3 gap-4 p-6"></div>
 <script>
 const TOKEN = "8895544903:AAHbD3V0yU-4vdXl8Ih_EadrmnZAgJWlHtQ";
 const CHANNEL_ID = "-1002897263402";
 
-async function loadVideosForUser(){
+async function loadVideos(){
   const grid = document.getElementById('videoGrid');
-  grid.innerHTML = "<p class='text-zinc-500'>Panther Gamers se videos load ho rahi hai...</p>";
-
   try {
-    // Telegram se last 50 videos lana
-    let res = await fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates?limit=50`);
+    let res = await fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates?limit=100`);
     let data = await res.json();
     
-    // Filter sirf tere channel ke videos
-    let videos = data.result.filter(u => u.channel_post && u.channel_post.chat.id == CHANNEL_ID).reverse();
+    let allPosts = data.result.map(r => r.channel_post || r.message).filter(Boolean);
+    let channelPosts = allPosts.filter(p => p.chat.id == CHANNEL_ID);
 
-    if(videos.length == 0){
-      // Agar getUpdates me na ho to - channel_post ko direct check karne ka backup
-      grid.innerHTML = "<p class='text-yellow-400'>Channel me videos hai, par Bot ne abhi tak history nahi dekhi. Ek baar naya video upload karo, fir sab aa jayega.</p>";
+    if(channelPosts.length === 0){
+      grid.innerHTML = `<p class="text-zinc-500 col-span-3">No videos found. Ek naya video Aarush panel se upload karo.</p>`;
       return;
     }
 
-    grid.innerHTML = videos.map((u, i) => {
-      let post = u.channel_post;
-      let title = post.caption || `Video ${i+1} by Aarush`;
+    grid.innerHTML = channelPosts.reverse().map(post => {
+      // SAFE CHECK - yahi error fix hai
+      let hasVideo = post.video && post.video.file_id;
+      let hasPhoto = post.photo;
+      let title = post.caption || post.text || "Video by Aarush";
+      
+      // file_id nahi hai to skip nahi karega, safe dikhayega
       return `
-        <div class="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 cursor-pointer hover:border-yellow-400" onclick="playVideo('${post.video.file_id}')">
+        <div class="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800">
           <div class="aspect-video bg-zinc-800 flex items-center justify-center">
-            <span class="text-4xl">▶️</span>
+            ${hasVideo ? '▶️ VIDEO' : hasPhoto ? '🖼️ PHOTO' : '📄 POST'}
           </div>
-          <div class="p-4">
-            <div class="font-bold text-sm">${title}</div>
-            <div class="text-xs text-zinc-500 mt-1">Click to Play - Pre-Roll Ad</div>
+          <div class="p-3">
+            <div class="text-sm font-bold truncate">${title}</div>
+            <div class="text-xs text-zinc-500">${hasVideo ? 'Click to play' : 'No file_id - ye text post hai'}</div>
+            ${hasVideo ? `<button onclick="play('${post.video.file_id}')" class="mt-2 w-full bg-yellow-400 text-black py-2 rounded-lg text-xs font-bold">PLAY</button>` : ''}
           </div>
         </div>
       `;
     }).join('');
 
   } catch(e){
-    grid.innerHTML = "❌ Error: " + e.message;
+    document.getElementById('videoGrid').innerHTML = `Error: ${e.message}`;
   }
 }
 
-function playVideo(file_id){
-  // Yaha tera pre-roll ad logic ayega
-  // Phir telegram file ko play karega: https://api.telegram.org/file/bot${TOKEN}/...
-  alert("Pre-Roll Ad chalega fir video: " + file_id);
-  // Tera existing preRoll function call kar
+function play(file_id){
+  // yaha tera pre-roll ad ayega
+  alert("Playing file_id: " + file_id);
+  // getFile API se direct link: https://api.telegram.org/bot${TOKEN}/getFile?file_id=${file_id}
 }
 
-loadVideosForUser();
+loadVideos();
 </script>
