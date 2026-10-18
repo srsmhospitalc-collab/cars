@@ -10,13 +10,11 @@
 <header class="p-6 flex justify-between border-b border-zinc-800">
 <h1 class="text-2xl font-black">SFA <span class="text-yellow-400">GUNKA</span></h1>
 </header>
-
 <div class="p-6">
 <div id="videoGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 <p class="text-zinc-500">Loading videos...</p>
 </div>
 </div>
-
 <div id="playerModal" class="fixed inset-0 bg-black/95 hidden z-[999] flex items-center justify-center p-4">
 <div class="bg-zinc-900 w-full max-w-3xl rounded-2xl overflow-hidden border border-zinc-800">
 <div class="p-3 flex justify-between items-center bg-black">
@@ -27,24 +25,21 @@
 <video id="mainVideo" class="w-full aspect-video hidden bg-black" controls playsinline></video>
 </div>
 </div>
-
 <script>
 const TOKEN="8895544903:AAHbD3V0yU-4vdXl8Ih_EadrmnZAgJWlHtQ";
 const CHANNEL_ID="-1002897263402";
-
+const CLICKADILLA_VAST = "https://vast.yomeno.xyz/vast?spot_id=1504726";
 async function getRealVastUrl(){
   let realIP="8.8.8.8";
   try{
     let r=await fetch('https://api.ipify.org?format=json');
     let j=await r.json();
     realIP=j.ip;
-  }catch(e){ console.log("IP fetch fail"); }
+  }catch(e){}
   let realUA=encodeURIComponent(navigator.userAgent);
-  let url=`https://16793.rtb.adp3.net/pre-roll-rp?pubid=1013423&siteid=410055&ip=${realIP}&ua=${realUA}`;
-  console.log("VAST URL:",url);
-  return url;
+  let backupUrl=`https://16793.rtb.adp3.net/pre-roll-rp?pubid=1013423&siteid=410055&ip=${realIP}&ua=${realUA}`;
+  return { primary: CLICKADILLA_VAST, backup: backupUrl };
 }
-
 async function loadVideos(){
   try{
     let res=await fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates?limit=100`);
@@ -59,7 +54,21 @@ async function loadVideos(){
     }).join('');
   }catch(e){ document.getElementById('videoGrid').innerHTML="<p class='text-red-400'>Error loading</p>"; }
 }
-
+async function tryFetchVast(vastUrl){
+  try{
+    let proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(vastUrl)}`;
+    let vastText=await fetch(proxyUrl).then(r=>r.text());
+    console.log("VAST:", vastText.substring(0,800));
+    if(!vastText || !vastText.includes("<VAST")) return null;
+    let parser=new DOMParser();
+    let xml=parser.parseFromString(vastText,"text/xml");
+    let mediaFile=xml.querySelector("MediaFile");
+    if(mediaFile && mediaFile.textContent.trim()){
+      return mediaFile.textContent.trim();
+    }
+  }catch(e){ console.log("VAST Error",e); }
+  return null;
+}
 async function play(file_id, title){
   document.getElementById('playerModal').classList.remove('hidden');
   document.getElementById('playerTitle').innerText=title;
@@ -67,35 +76,24 @@ async function play(file_id, title){
   let mainVideo=document.getElementById('mainVideo');
   adBox.classList.remove('hidden');
   mainVideo.classList.add('hidden');
-  adBox.innerHTML=`<p class="text-yellow-400 animate-pulse p-10 text-center">Ad Loading...<br><span class="text-xs text-zinc-500">Fetching VAST</span></p>`;
-
-  let vastUrl=await getRealVastUrl();
-  try{
-    let proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(vastUrl)}`;
-    let vastText=await fetch(proxyUrl).then(r=>r.text());
-    console.log("VAST Response:", vastText.substring(0,500));
-
-    let parser=new DOMParser();
-    let xml=parser.parseFromString(vastText,"text/xml");
-    let mediaFile=xml.querySelector("MediaFile");
-
-    if(mediaFile && mediaFile.textContent.trim()){
-      let adVideoUrl=mediaFile.textContent.trim();
-      console.log("Ad Found:", adVideoUrl);
-      adBox.innerHTML=`<div class="w-full"><video id="adVideo" class="w-full aspect-video bg-black" autoplay playsinline controls></video><div class="p-2 bg-black text-xs flex justify-between items-center"><span>Ad - <span id="adTimer">Skip in 5s</span></span><button onclick="playMain('${file_id}')" class="text-yellow-400 font-bold">Skip Ad >></button></div></div>`;
-      let adVideo=document.getElementById('adVideo');
-      adVideo.src=adVideoUrl;
-      adVideo.play().catch(()=>{});
-      let t=5; let timer=setInterval(()=>{t--; let el=document.getElementById('adTimer'); if(el) el.innerText=t<=0?"":`Skip in ${t}s`; if(t<=0){clearInterval(timer); if(el) el.innerText="Skippable";}},1000);
-      adVideo.onended=()=>playMain(file_id);
-      return;
-    } else {
-      console.log("No Ad Fill - VAST Empty");
-    }
-  }catch(e){ console.log("VAST Error:",e); }
+  adBox.innerHTML=`<p class="text-yellow-400 animate-pulse p-10 text-center">Ad Loading...<br><span class="text-xs text-zinc-500">ClickAdilla VAST</span></p>`;
+  let urls=await getRealVastUrl();
+  let adVideoUrl = await tryFetchVast(urls.primary);
+  if(!adVideoUrl){
+    adBox.innerHTML=`<p class="text-yellow-400 animate-pulse p-10 text-center">Backup Ad Loading...</p>`;
+    adVideoUrl = await tryFetchVast(urls.backup);
+  }
+  if(adVideoUrl){
+    adBox.innerHTML=`<div class="w-full"><video id="adVideo" class="w-full aspect-video bg-black" autoplay playsinline controls></video><div class="p-2 bg-black text-xs flex justify-between items-center"><span>Ad - <span id="adTimer">Skip in 5s</span></span><button onclick="playMain('${file_id}')" class="text-yellow-400 font-bold">Skip Ad >></button></div></div>`;
+    let adVideo=document.getElementById('adVideo');
+    adVideo.src=adVideoUrl;
+    adVideo.play().catch(()=>{});
+    let t=5; let timer=setInterval(()=>{t--; let el=document.getElementById('adTimer'); if(el) el.innerText=t<=0?"":`Skip in ${t}s`; if(t<=0){clearInterval(timer); if(el) el.innerText="Skippable";}},1000);
+    adVideo.onended=()=>playMain(file_id);
+    return;
+  }
   playMain(file_id);
 }
-
 async function playMain(file_id){
   document.getElementById('adBox').classList.add('hidden');
   let mainVideo=document.getElementById('mainVideo');
@@ -108,13 +106,11 @@ async function playMain(file_id){
     mainVideo.play();
   }catch(e){ mainVideo.outerHTML="<p class='p-10 text-center text-red-400'>Video load failed</p>"; }
 }
-
 function closePlayer(){
   document.getElementById('playerModal').classList.add('hidden');
   let v=document.getElementById('mainVideo'); v.pause(); v.src="";
   let av=document.getElementById('adVideo'); if(av){ av.pause(); }
 }
-
 loadVideos();
 </script>
 </body>
