@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SFA GUNKA - STREAMTAPE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0A0A0B] text-white">
+<header class="p-6 border-b border-zinc-800 flex justify-between">
+<h1 class="text-2xl font-black">SFA <span class="text-yellow-400">GUNKA</span></h1>
+<a href="index.html" class="text-xs bg-zinc-800 px-3 py-2 rounded">← Back</a>
+</header>
+
+<div class="p-4">
+  <div class="bg-zinc-900 p-4 rounded-[24px] border border-zinc-800 max-w-xl mb-8">
+    <input id="titleInput" placeholder="Video Title" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 mb-3">
+    <input id="linkInput" placeholder="https://streamtape.com/e/xxxx" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3">
+    <button onclick="addVideo()" class="mt-3 w-full bg-yellow-400 text-black py-3 rounded-xl font-bold">ADD VIDEO</button>
+  </div>
+  <div id="videoGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+</div>
+
+<div id="playerModal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4">
+  <div class="bg-zinc-900 w-full max-w-3xl rounded-2xl overflow-hidden border border-zinc-800">
+    <div class="p-3 flex justify-between bg-black"><span id="playerTitle">Video</span><button onclick="closePlayer()" class="bg-white text-black w-8 h-8 rounded-full">X</button></div>
+    <div class="aspect-video bg-black"><iframe id="tapePlayer" class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>
+  </div>
+</div>
+
+<script>
+let videos=JSON.parse(localStorage.getItem('sfa_tape')||'[{"title":"WhatsApp Video","link":"https://streamtape.com/e/1d2mD8lmq9TelWR/"}]');
+function render(){document.getElementById('videoGrid').innerHTML=videos.map(v=>`<div onclick="playVideo('${v.link}','${v.title}')" class="bg-zinc-900 rounded-2xl border border-zinc-800 cursor-pointer"><div class="aspect-video bg-black flex items-center justify-center">▶️</div><div class="p-3"><p class="font-bold text-sm">${v.title}</p></div></div>`).join('')}
+function addVideo(){let t=document.getElementById('titleInput').value||'SFA Video';let l=document.getElementById('linkInput').value.trim().replace('/v/','/e/');if(!l)return alert('Link daal');videos.unshift({title:t,link:l});localStorage.setItem('sfa_tape',JSON.stringify(videos));render()}
+function playVideo(l,t){document.getElementById('playerTitle').innerText=t;document.getElementById('tapePlayer').src=l;document.getElementById('playerModal').classList.remove('hidden')}
+function closePlayer(){document.getElementById('tapePlayer').src='';document.getElementById('playerModal').classList.add('hidden')}
+render();
+</script>
+</body>
+</html>
