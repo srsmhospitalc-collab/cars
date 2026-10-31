@@ -16,6 +16,12 @@ body{margin:0;font-family:system-ui,Arial;background:#0f172a;color:white;text-al
 .card{background:#1e293b;padding:20px;border-radius:16px;width:150px;border:1px solid #334155}
 .install{background:#1e293b;margin:20px;border-radius:16px;padding:20px;text-align:left;max-width:500px;margin:0 auto}
 .footer{padding:25px;color:#64748b;font-size:13px}
+
+/* Naya Box CSS */
+.link-box{background:#020617;border:1px dashed #38bdf8;max-width:500px;margin:25px auto 0 auto;padding:15px;border-radius:12px}
+.link-box input{width:100%;background:#1e293b;color:#38bdf8;border:none;padding:12px;border-radius:8px;font-size:13px;text-align:center;outline:none}
+.copy-btn{background:#38bdf8;color:#020617;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;margin-top:10px;cursor:pointer}
+.copy-hint{font-size:12px;color:#94a3b8;margin-top:8px}
 </style>
 </head>
 <body>
@@ -30,7 +36,13 @@ body{margin:0;font-family:system-ui,Arial;background:#0f172a;color:white;text-al
 <p>Quiz Khelo, Coins Kamao, Unlimited Games!</p>
 <p>⚡ 100% Safe | Direct GitHub Download</p>
 
-<a class="btn" href="https://github.com/srsmhospitalc-collab/cars/releases/download/v1.0/sfa_earn.apk" download>⬇️ DOWNLOAD APK</a>
+<a class="btn" href="https://github.com/srsmhospitalc-collab/cars/releases/download/v1.0/SFAEARN.apk" download>⬇️ DOWNLOAD APK</a>
+
+<div class="link-box">
+  <input type="text" id="apkLink" value="https://github.com/srsmhospitalc-collab/cars/releases/download/v1.0/SFAEARN.apk" readonly>
+  <button class="copy-btn" onclick="copyLink()">📋 Copy Link</button>
+  <p class="copy-hint">👇 Copy and paste in Chrome if download not start</p>
+</div>
 
 <p class="info">File: SFAEARN.apk | Server: GitHub Releases</p>
 </div>
@@ -51,6 +63,16 @@ body{margin:0;font-family:system-ui,Arial;background:#0f172a;color:white;text-al
 </div>
 
 <div class="footer">© 2026 SFA Earn | srsmhospitalc-collab/cars</div>
+
+<script>
+function copyLink() {
+  var copyText = document.getElementById("apkLink");
+  copyText.select();
+  copyText.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(copyText.value);
+  alert("Link Copied! Ab Chrome me paste karo");
+}
+</script>
 
 </body>
 </html>
